@@ -33,8 +33,6 @@
             <key>RequestsOpenAccess</key>
             <true/>
         </dict>
-        <key>NSExtensionMainStoryboard</key>
-        <string></string>
         <key>NSExtensionPrincipalClass</key>
         <string>$(PRODUCT_MODULE_NAME).KeyboardViewController</string>
         <key>NSExtensionPointIdentifier</key>
