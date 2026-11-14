@@ -34,7 +34,7 @@ private protocol KeyboardActionHandling: AnyObject {
 }
 
 extension KeyboardViewController: KeyboardActionHandling {
-    func handleKeyPress(_ key: KeyboardKey) {
+    fileprivate func handleKeyPress(_ key: KeyboardKey) {
         textDocumentProxy.insertText(key.display)
         feedbackGenerator.impactOccurred()
     }
