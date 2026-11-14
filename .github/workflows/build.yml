@@ -1,0 +1,124 @@
+name: Build iOS (unsigned IPA)
+
+# Ручной запуск: Actions → "Build iOS (unsigned IPA)" → Run workflow.
+# Кнопка появляется только когда этот файл лежит в ветке по умолчанию (main).
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Раннер (GitHub-hosted macOS)"
+        type: choice
+        default: macos-26
+        options:
+          - macos-26        # Apple Silicon, Xcode 26.x  (он же macos-latest)
+          - macos-15        # Apple Silicon, Xcode 16.4
+          - macos-26-intel  # Intel x64
+          - macos-15-intel  # Intel x64
+      custom_runner:
+        description: "Свой label раннера — перекрывает список (self-hosted, macos-26-xlarge, ...)"
+        type: string
+        required: false
+        default: ""
+      xcode:
+        description: "Версия Xcode, напр. 26.3 (пусто = Xcode по умолчанию на раннере)"
+        type: string
+        required: false
+        default: ""
+      configuration:
+        description: "Конфигурация сборки"
+        type: choice
+        default: Release
+        options:
+          - Release
+          - Debug
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash   # = bash -eo pipefail
+
+env:
+  PROJECT_DIR: Keyboard26
+  SCHEME: Keyboard26
+  APP_NAME: Keyboard26
+  APPEX_NAME: Keyboard26Keyboard
+  CONFIGURATION: ${{ inputs.configuration || 'Release' }}
+
+jobs:
+  build:
+    name: Build on ${{ inputs.custom_runner || inputs.runner || 'macos-26' }}
+    runs-on: ${{ inputs.custom_runner || inputs.runner || 'macos-26' }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Select Xcode
+        env:
+          XCODE_VERSION: ${{ inputs.xcode }}
+        run: |
+          if [ -n "$XCODE_VERSION" ]; then
+            XCODE_APP="/Applications/Xcode_${XCODE_VERSION}.app"
+            if [ ! -d "$XCODE_APP" ]; then
+              echo "::error::Xcode ${XCODE_VERSION} не найден на этом раннере. Доступные версии:"
+              ls -d /Applications/Xcode*.app
+              exit 1
+            fi
+            sudo xcode-select -s "$XCODE_APP"
+          fi
+          sw_vers
+          uname -m
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+        run: |
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen --version
+
+      # В репозитории нет .xcodeproj — он генерируется из Keyboard26/project.yml
+      - name: Generate Xcode project
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: xcodegen generate
+
+      - name: Build (no code signing)
+        run: |
+          if command -v xcbeautify >/dev/null; then
+            FORMAT=(xcbeautify --renderer github-actions)
+          else
+            FORMAT=(cat)
+          fi
+          xcodebuild build \
+            -project "$PROJECT_DIR/$SCHEME.xcodeproj" \
+            -scheme "$SCHEME" \
+            -configuration "$CONFIGURATION" \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | "${FORMAT[@]}"
+
+      - name: Package unsigned IPA
+        run: |
+          APP="build/Build/Products/${CONFIGURATION}-iphoneos/${APP_NAME}.app"
+          # Клавиатура должна быть вложена в приложение
+          test -d "$APP/PlugIns/${APPEX_NAME}.appex"
+          mkdir -p out/Payload
+          cp -R "$APP" out/Payload/
+          (cd out && zip -qry "${APP_NAME}-unsigned.ipa" Payload)
+          ls -lh out/*.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v7
+        with:
+          path: out/${{ env.APP_NAME }}-unsigned.ipa
+          archive: false          # отдать .ipa как есть, без упаковки в zip
+          if-no-files-found: error
+          retention-days: 14
