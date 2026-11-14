@@ -1,0 +1,53 @@
+# Спецификация XcodeGen: из неё генерируется Keyboard26.xcodeproj
+#   cd Keyboard26 && xcodegen generate
+name: Keyboard26
+
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "16.0"          # NavigationStack в ContentView требует iOS 16+
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    GENERATE_INFOPLIST_FILE: "NO"
+
+targets:
+  # Хост-приложение
+  Keyboard26:
+    type: application
+    platform: iOS
+    sources:
+      - path: Keyboard26
+    settings:
+      base:
+        INFOPLIST_FILE: Keyboard26/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.keyboard26
+    dependencies:
+      - target: Keyboard26Keyboard   # встраивается в Keyboard26.app/PlugIns
+
+  # Расширение-клавиатура
+  Keyboard26Keyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Keyboard26Keyboard
+    settings:
+      base:
+        INFOPLIST_FILE: Keyboard26Keyboard/Info.plist
+        # обязан начинаться с bundle id приложения
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.keyboard26.keyboard
+
+schemes:
+  Keyboard26:
+    build:
+      targets:
+        Keyboard26: all
+    run:
+      config: Debug
+    archive:
+      config: Release
