@@ -4,8 +4,6 @@
 <dict>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
-    <key>CFBundleDisplayName</key>
-    <string>iOS26 Keyboard</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -15,28 +13,17 @@
     <key>CFBundleName</key>
     <string>iOS26 Keyboard</string>
     <key>CFBundlePackageType</key>
-    <string>XPC!</string>
+    <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
-    <key>NSExtension</key>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>UIApplicationSceneManifest</key>
     <dict>
-        <key>NSExtensionAttributes</key>
-        <dict>
-            <key>IsASCIICapable</key>
-            <true/>
-            <key>PrefersRightToLeft</key>
-            <false/>
-            <key>PrimaryLanguage</key>
-            <string>en</string>
-            <key>RequestsOpenAccess</key>
-            <true/>
-        </dict>
-        <key>NSExtensionPrincipalClass</key>
-        <string>$(PRODUCT_MODULE_NAME).KeyboardViewController</string>
-        <key>NSExtensionPointIdentifier</key>
-        <string>com.apple.keyboard-service</string>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
     </dict>
 </dict>
 </plist>
